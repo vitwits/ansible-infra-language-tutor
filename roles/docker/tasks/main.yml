@@ -1,0 +1,13 @@
+---
+- name: Install Docker and Docker Compose plugin
+  apt:
+    name:
+      - docker.io
+      - docker-compose-v2
+    state: present
+
+- name: Ensure Docker is started and enabled
+  service:
+    name: docker
+    state: started
+    enabled: yes

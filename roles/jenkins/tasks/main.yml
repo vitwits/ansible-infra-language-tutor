@@ -1,0 +1,27 @@
+---
+- name: Create Jenkins directory
+  file:
+    path: /opt/jenkins
+    state: directory
+    mode: '0755'
+
+- name: Deploy Jenkins Docker Compose file
+  copy:
+    dest: /opt/jenkins/docker-compose.yml
+    content: |
+      services:
+        jenkins:
+          image: jenkins/jenkins:lts
+          restart: always
+          ports:
+            - "8080:8080"
+            - "50000:50000"
+          volumes:
+            - jenkins_home:/var/jenkins_home
+      volumes:
+        jenkins_home:
+
+- name: Start Jenkins via Docker Compose
+  command:
+    chdir: /opt/jenkins
+    cmd: docker compose up -d
