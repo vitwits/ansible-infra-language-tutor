@@ -1,0 +1,28 @@
+---
+- name: Create Nexus directory
+  file:
+    path: /opt/nexus
+    state: directory
+    mode: '0755'
+
+- name: Deploy Nexus Docker Compose file
+  copy:
+    dest: /opt/nexus/docker-compose.yml
+    content: |
+      services:
+        nexus:
+          image: sonatype/nexus3:latest
+          container_name: nexus
+          restart: always
+          ports:
+            - "8081:8081" # UI & API
+            - "8082:8082" # Docker Connector (Hosted/Group)
+          volumes:
+            - nexus-data:/nexus-data
+      volumes:
+        nexus-data:
+
+- name: Start Nexus via Docker Compose
+  command:
+    chdir: /opt/nexus
+    cmd: docker compose up -d

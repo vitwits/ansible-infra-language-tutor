@@ -6,3 +6,4 @@
     - { role: common, tags: ["common"] }
     - { role: docker, tags: ["docker"] }
     - { role: jenkins, tags: ["jenkins"] }
+    - { role: nexus, tags: ["nexus"] }

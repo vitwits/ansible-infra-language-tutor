@@ -32,6 +32,9 @@ infra-ansible/
     ├── common/
     │   └── tasks/
     │       └── main.yml
+    └── nexus/
+        └── tasks/
+            └── main.yml
     ├── docker/
     │   └── tasks/
     │       └── main.yml
