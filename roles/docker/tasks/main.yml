@@ -12,12 +12,12 @@
     state: directory
     mode: '0755'
 
-- name: Configure Docker to allow insecure local registry over HTTP
+- name: Configure Docker to allow insecure local registry
   copy:
     dest: /etc/docker/daemon.json
     content: |
       {
-        "insecure-registries" : ["localhost:8083"]
+        "insecure-registries" : ["nexus.box.com:5000", "localhost:5000"]
       }
     mode: '0644'
   notify: Restart Docker

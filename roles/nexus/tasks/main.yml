@@ -15,8 +15,8 @@
           container_name: nexus
           restart: always
           ports:
-            - "8081:8081" # UI & API
-            - "8083:8083" # Docker Connector (Hosted/Group)
+            - "8081:8081"   # Web UI
+            - "5000:5000"   # Docker Registry — HTTP
           volumes:
             - nexus-data:/nexus-data
       volumes:
