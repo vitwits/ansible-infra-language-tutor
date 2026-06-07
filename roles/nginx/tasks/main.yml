@@ -1,0 +1,112 @@
+# --- 1. SSL CERT GENERATION ---
+- name: Ensure SSL directory exists
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: '0755'
+
+- name: Check if SSL certificate already exists
+  stat:
+    path: /etc/nginx/ssl/box.crt
+  register: ssl_cert
+
+- name: Generate Self-Signed SSL Certificate for *.box.com
+  command: >
+    openssl req -x509 -nodes -days 3650 -newkey rsa:2048
+    -keyout /etc/nginx/ssl/box.key
+    -out /etc/nginx/ssl/box.crt
+    -subj "/C=DE/ST=Bavaria/L=Passau/O=Development/CN=*.box.com"
+    -addext "subjectAltName = DNS:jenkins.box.com, DNS:nexus.box.com"
+  when: not ssl_cert.stat.exists
+
+# --- 2. CERT TRUST ON THE SERVER ---
+- name: Copy certificate to system trusted store
+  copy:
+    src: /etc/nginx/ssl/box.crt
+    dest: /usr/local/share/ca-certificates/box.crt
+    remote_src: yes
+  register: new_ca_cert
+
+- name: Update system certificates store
+  command: update-ca-certificates
+  when: new_ca_cert.changed
+  notify: Restart Docker
+
+# --- 3. SETTING UP NGINX VHOSTS ---
+- name: Add local domains to /etc/hosts for loopback routing
+  lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 jenkins.box.com nexus.box.com"
+    state: present
+    backup: yes
+
+- name: Deploy Nginx reverse proxy configuration
+  copy:
+    dest: /etc/nginx/sites-available/box-services.conf
+    content: |
+      client_max_body_size 0;
+
+      # 1. JENKINS PROXY
+      server {
+          listen 443 ssl;
+          server_name jenkins.box.com;
+
+          ssl_certificate /etc/nginx/ssl/box.crt;
+          ssl_certificate_key /etc/nginx/ssl/box.key;
+
+          location / {
+              proxy_pass http://localhost:8080;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+          }
+      }
+
+      # 2. NEXUS UI PROXY
+      server {
+          listen 443 ssl;
+          server_name nexus.box.com;
+
+          ssl_certificate /etc/nginx/ssl/box.crt;
+          ssl_certificate_key /etc/nginx/ssl/box.key;
+
+          location / {
+              proxy_pass http://localhost:8081;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+          }
+      }
+
+      # 3. NEXUS DOCKER REGISTRY PROXY (Listens 8082, making it HTTPS)
+      server {
+          listen 8082 ssl;
+          server_name nexus.box.com;
+
+          ssl_certificate /etc/nginx/ssl/box.crt;
+          ssl_certificate_key /etc/nginx/ssl/box.key;
+
+          location / {
+              proxy_pass http://127.0.0.1:8083; # Docker Nexus Port
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+          }
+      }
+  notify: Restart Nginx
+
+- name: Enable Nginx configuration
+  file:
+    src: /etc/nginx/sites-available/box-services.conf
+    dest: /etc/nginx/sites-enabled/box-services.conf
+    state: link
+  notify: Restart Nginx
+
+- name: Remove default Nginx site configuration
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Restart Nginx

@@ -7,3 +7,4 @@
     - { role: docker, tags: ["docker"] }
     - { role: jenkins, tags: ["jenkins"] }
     - { role: nexus, tags: ["nexus"] }
+    - { role: nginx, tags: ["nginx"] }

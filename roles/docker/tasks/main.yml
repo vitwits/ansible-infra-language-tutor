@@ -6,6 +6,27 @@
       - docker-compose-v2
     state: present
 
+- name: Ensure Docker configuration directory exists
+  file:
+    path: /etc/docker
+    state: directory
+    mode: '0755'
+
+- name: Configure Docker to allow insecure local registry over HTTP
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "insecure-registries" : ["localhost:8083"]
+      }
+    mode: '0644'
+  notify: Restart Docker
+
+- name: Ensure docker.sock has correct permissions (fixes permission denied for Jenkins)
+  file:
+    path: /var/run/docker.sock
+    mode: '0666'
+
 - name: Ensure Docker is started and enabled
   service:
     name: docker
