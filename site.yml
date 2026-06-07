@@ -8,3 +8,4 @@
     - { role: jenkins, tags: ["jenkins"] }
     - { role: nexus, tags: ["nexus"] }
     - { role: nginx, tags: ["nginx"] }
+    - { role: ansible, tags: ["ansible"] }

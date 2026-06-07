@@ -33,12 +33,18 @@ infra-ansible/
     │   └── tasks/
     │       └── main.yml
     └── nexus/
-        └── tasks/
-            └── main.yml
+    │   └── tasks/
+    │       └── main.yml
     ├── docker/
     │   └── tasks/
     │       └── main.yml
     └── jenkins/
+    │   └── tasks/
+    │       └── main.yml
+    └── nginx/
+    │   └── tasks/
+    │       └── main.yml
+    └── ansible/
         └── tasks/
             └── main.yml
 ```
